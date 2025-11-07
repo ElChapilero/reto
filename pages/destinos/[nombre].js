@@ -4,13 +4,12 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import dynamic from "next/dynamic";
-import { ChevronLeft, MapPin, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Star } from "lucide-react";
 import gastronomia from "./gastronomia";
 import floraFauna from "./floraFauna";
 import cultura from "./cultura";
 import { supabase } from "@/lib/supabaseClient";
 
-// Carga dinámica de Leaflet
 const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapContainer), { ssr: false });
 const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
 const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ssr: false });
@@ -20,7 +19,7 @@ export default function DetalleDestino() {
   const router = useRouter();
   const { nombre } = router.query;
   const [destino, setDestino] = useState(null);
-  const [imagenActiva, setImagenActiva] = useState(null);
+  const [imagenActiva, setImagenActiva] = useState(0);
 
   useEffect(() => {
     if (!router.isReady || !nombre) return;
@@ -31,7 +30,6 @@ export default function DetalleDestino() {
 
     if (encontrado) {
       setDestino(encontrado);
-      setImagenActiva(encontrado.imagen);
     } else {
       const fetchData = async () => {
         const { data, error } = await supabase
@@ -40,10 +38,7 @@ export default function DetalleDestino() {
           .ilike("nombre", nombreLimpio)
           .maybeSingle();
 
-        if (!error && data) {
-          setDestino(data);
-          setImagenActiva(data.imagen);
-        }
+        if (!error && data) setDestino(data);
       };
       fetchData();
     }
@@ -57,7 +52,6 @@ export default function DetalleDestino() {
     );
   }
 
-  // Galería simulada
   const imagenesGaleria = [
     destino.imagen,
     "/imagenes/naturaleza1.jpg",
@@ -65,6 +59,19 @@ export default function DetalleDestino() {
     "/imagenes/pueblo1.jpg",
     "/imagenes/comida1.jpg",
   ];
+
+  const siguiente = () => {
+    setImagenActiva((prev) => (prev + 1) % imagenesGaleria.length);
+  };
+
+  const anterior = () => {
+    setImagenActiva((prev) => (prev - 1 + imagenesGaleria.length) % imagenesGaleria.length);
+  };
+
+  const colors = {
+    primary: "#2E8B57",
+    secondary: "#3BA6E8",
+  };
 
   return (
     <div className="min-h-screen bg-white text-gray-800">
@@ -77,43 +84,49 @@ export default function DetalleDestino() {
           <ChevronLeft className="mr-2" /> Volver a destinos
         </button>
 
-        {/* Contenedor principal */}
-        <div className="flex flex-col md:flex-row bg-white rounded-2xl shadow-md overflow-hidden border border-gray-200">
+        {/* Galería */}
+        <div className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden mb-10">
+          {/* Imagen principal */}
+          <div className="relative w-full aspect-[16/9]">
+            <motion.img
+              key={imagenActiva}
+              src={imagenesGaleria[imagenActiva]}
+              alt={`imagen-${imagenActiva}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
+              className="w-full h-full object-cover"
+            />
+
+            {/* Flechas */}
+            <button
+              onClick={anterior}
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition"
+            >
+              <ChevronLeft className="text-green-700" />
+            </button>
+            <button
+              onClick={siguiente}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-md transition"
+            >
+              <ChevronRight className="text-green-700" />
+            </button>
+          </div>
+
           {/* Miniaturas */}
-          <div className="flex md:flex-col gap-2 md:w-24 md:p-4 justify-center overflow-x-auto md:overflow-y-auto md:justify-start p-2">
+          <div className="flex gap-3 overflow-x-auto p-3 bg-gray-50 border-t border-gray-200 justify-center">
             {imagenesGaleria.map((img, i) => (
               <motion.div
                 key={i}
                 whileHover={{ scale: 1.05 }}
-                className={`w-20 h-20 md:w-24 md:h-24 rounded-md overflow-hidden cursor-pointer border-2 transition-all flex-shrink-0 ${
-                  imagenActiva === img ? "border-green-600" : "border-transparent"
+                onClick={() => setImagenActiva(i)}
+                className={`w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 border-2 cursor-pointer transition-all ${
+                  imagenActiva === i ? "border-green-600" : "border-transparent"
                 }`}
-                onClick={() => setImagenActiva(img)}
               >
-                <img
-                  src={img}
-                  alt={`thumbnail-${i}`}
-                  className="w-full h-full object-cover"
-                />
+                <img src={img} alt={`miniatura-${i}`} className="w-full h-full object-cover" />
               </motion.div>
             ))}
-          </div>
-
-          {/* Imagen principal */}
-          <div className="flex-1 flex justify-center items-center bg-gray-50">
-            <motion.div
-              key={imagenActiva}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className="w-full max-w-3xl aspect-[16/9] rounded-xl overflow-hidden shadow-lg"
-            >
-              <img
-                src={imagenActiva}
-                alt={destino.nombre}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
           </div>
         </div>
 
@@ -129,23 +142,12 @@ export default function DetalleDestino() {
               <Star
                 key={i}
                 size={18}
-                className={i < Math.round(destino.rating) ? "text-yellow-400" : "text-gray-300"}
+                className={i < Math.round(destino.rating || 4) ? "text-yellow-400" : "text-gray-300"}
               />
             ))}
             <span className="ml-2 text-gray-500 text-sm">({destino.rating || "4.5"})</span>
           </div>
           <p className="text-gray-700 leading-relaxed">{destino.descripcion}</p>
-        </section>
-
-        {/* Qué visitar */}
-        <section className="mt-10 bg-gray-50 rounded-2xl shadow-sm p-6 border border-gray-200">
-          <h2 className="text-2xl font-semibold text-green-700 mb-3">Qué visitar cerca</h2>
-          <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Miradores naturales y senderos ecológicos.</li>
-            <li>Ferias típicas y gastronomía local.</li>
-            <li>Museos y artesanías culturales.</li>
-            <li>Avistamiento de fauna andina.</li>
-          </ul>
         </section>
 
         {/* Mapa */}
@@ -171,16 +173,19 @@ export default function DetalleDestino() {
         )}
 
         {/* Realidad Aumentada */}
-        <section className="text-center mt-10 bg-gradient-to-r from-green-100 to-cyan-50 rounded-2xl shadow-md py-10 border border-gray-200">
-          <h2 className="text-2xl font-semibold text-green-800 mb-3">
-            Experiencia en Realidad Aumentada
-          </h2>
-          <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
-            Descubre este destino de una forma diferente: explora modelos 3D, flora, fauna y arquitectura en RA.
+        <section
+          className="text-center mt-10 rounded-2xl shadow-md py-10 border border-gray-200"
+          style={{
+            background: `linear-gradient(to right, ${colors.primary}, ${colors.secondary})`,
+          }}
+        >
+          <h2 className="text-2xl font-semibold text-white mb-3">Experiencia en Realidad Aumentada</h2>
+          <p className="text-white/90 mb-6 max-w-2xl mx-auto">
+            Explora este destino de manera inmersiva mediante modelos 3D interactivos.
           </p>
           <motion.button
             whileTap={{ scale: 0.97 }}
-            className="px-8 py-3 bg-green-600 text-white font-semibold rounded-full hover:bg-green-700 hover:shadow-lg transition-all"
+            className="px-8 py-3 bg-white text-green-700 font-semibold rounded-full hover:bg-gray-100 transition-all shadow-md"
             onClick={() => alert("Aquí se abriría la experiencia de Realidad Aumentada")}
           >
             Explorar en RA
