@@ -1,21 +1,39 @@
 'use client'
+
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Search } from 'lucide-react'
+import { Menu, X, Search, LogOut } from 'lucide-react'
+import Link from 'next/link'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [visible, setVisible] = useState(true)
+  const [user, setUser] = useState(null)
 
-  // Paleta base
   const colors = {
-    primary: '#2E8B57', // verde
-    secondary: '#3BA6E8', // azul
-    accent: '#FFFFFF', // blanco para el botón
+    primary: '#2E8B57',
+    secondary: '#3BA6E8',
   }
 
-  // Ocultar navbar al bajar y mostrar al subir
+  // Detectar sesión activa
+  useEffect(() => {
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession()
+      setUser(data?.session?.user || null)
+    }
+    getSession()
+
+    // Escuchar cambios de sesión en tiempo real
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null)
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  // Ocultar navbar al hacer scroll
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > lastScrollY && window.scrollY > 80) {
@@ -30,12 +48,17 @@ export default function Navbar() {
   }, [lastScrollY])
 
   const navLinks = [
-    { name: 'Inicio', href: '#inicio' },
-    { name: 'Destinos', href: '#destinos' },
-    { name: 'Experiencias', href: '#experiencias' },
-    { name: 'Gastronomía', href: '#gastronomia' },
-    { name: 'Contacto', href: '#contacto' },
+    { name: 'Inicio', href: '/' },
+    { name: 'Destinos', href: '/destinos' },
+    { name: 'Rutas', href: '/rutas' },
+    { name: 'Contacto', href: '/contacto' },
   ]
+
+  // Cerrar sesión
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    setUser(null)
+  }
 
   return (
     <motion.nav
@@ -50,7 +73,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-20">
           {/* === LOGO === */}
-          <a href="#inicio" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <img
               src="/Logo_1.svg"
               alt="Logo Vive Nariño"
@@ -59,21 +82,21 @@ export default function Navbar() {
             <span className="font-bold text-lg text-white drop-shadow-sm">
               Vive Nariño
             </span>
-          </a>
+          </Link>
 
           {/* === NAV DESKTOP === */}
           <div className="hidden md:flex items-center space-x-7">
             {navLinks.map((link) => (
-              <a
+              <Link
                 key={link.name}
                 href={link.href}
                 className="font-medium text-white/90 hover:text-yellow-100 transition-all text-sm"
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
 
-            {/* === SEARCH === */}
+            {/* SEARCH */}
             <div className="relative ml-4">
               <input
                 type="text"
@@ -83,20 +106,36 @@ export default function Navbar() {
               <Search className="absolute left-3 top-2.5 text-gray-500" size={16} />
             </div>
 
-            {/* === AUTH BUTTONS === */}
+            {/* AUTH BUTTONS */}
             <div className="ml-6 flex items-center space-x-3">
-              <a
-                href="#login"
-                className="text-sm font-semibold text-white hover:text-yellow-100 transition-all"
-              >
-                Iniciar sesión
-              </a>
-              <a
-                href="#registro"
-                className="px-5 py-2 rounded-full text-sm font-semibold text-green-700 bg-white hover:bg-green-50 transition-all hover:scale-105 shadow-md"
-              >
-                Registro
-              </a>
+              {user ? (
+                <>
+                  <span className="text-white text-sm font-medium">
+                    {user.email?.split('@')[0]}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-green-700 bg-white hover:bg-green-50 transition-all hover:scale-105 shadow-md"
+                  >
+                    <LogOut size={16} /> Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="text-sm font-semibold text-white hover:text-yellow-100 transition-all"
+                  >
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-5 py-2 rounded-full text-sm font-semibold text-green-700 bg-white hover:bg-green-50 transition-all hover:scale-105 shadow-md"
+                  >
+                    Registro
+                  </Link>
+                </>
+              )}
             </div>
           </div>
 
@@ -124,14 +163,14 @@ export default function Navbar() {
           >
             <div className="px-6 py-5 space-y-4">
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.name}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
                   className="block font-medium hover:text-yellow-200 transition-all hover:translate-x-1"
                 >
                   {link.name}
-                </a>
+                </Link>
               ))}
 
               {/* SEARCH */}
@@ -144,22 +183,39 @@ export default function Navbar() {
                 <Search className="absolute left-3 top-2.5 text-gray-500" size={16} />
               </div>
 
-              {/* BOTONES */}
+              {/* AUTH BUTTONS */}
               <div className="pt-4 border-t border-white/30 flex flex-col gap-3">
-                <a
-                  href="#login"
-                  className="text-center font-semibold text-white hover:text-yellow-200 transition"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Iniciar sesión
-                </a>
-                <a
-                  href="#registro"
-                  className="text-center px-4 py-2 rounded-full text-sm font-semibold text-green-700 bg-white hover:bg-green-50 transition-all hover:scale-105 shadow-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Registro
-                </a>
+                {user ? (
+                  <>
+                    <span className="text-center font-semibold">{user.email}</span>
+                    <button
+                      onClick={() => {
+                        handleLogout()
+                        setIsOpen(false)
+                      }}
+                      className="text-center flex justify-center items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold text-green-700 bg-white hover:bg-green-50 transition-all hover:scale-105 shadow-md"
+                    >
+                      <LogOut size={16} /> Cerrar sesión
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      className="text-center font-semibold text-white hover:text-yellow-200 transition"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Iniciar sesión
+                    </Link>
+                    <Link
+                      href="/register"
+                      className="text-center px-4 py-2 rounded-full text-sm font-semibold text-green-700 bg-white hover:bg-green-50 transition-all hover:scale-105 shadow-md"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Registro
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
