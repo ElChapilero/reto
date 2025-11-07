@@ -92,7 +92,7 @@ export default function Navbar() {
               className="h-9 w-9 rounded-full shadow-md"
             />
             <span className="font-bold text-lg text-white drop-shadow-sm">
-              Vive Nariño
+              Tournature
             </span>
           </Link>
 
