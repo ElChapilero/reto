@@ -10,23 +10,43 @@ import floraFauna from "./floraFauna";
 import cultura from "./cultura";
 import { supabase } from "@/lib/supabaseClient";
 
-const MapContainer = dynamic(() => import("react-leaflet").then((m) => m.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import("react-leaflet").then((m) => m.TileLayer), { ssr: false });
-const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), { ssr: false });
-const Popup = dynamic(() => import("react-leaflet").then((m) => m.Popup), { ssr: false });
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((m) => m.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((m) => m.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(() => import("react-leaflet").then((m) => m.Marker), {
+  ssr: false,
+});
+const Popup = dynamic(() => import("react-leaflet").then((m) => m.Popup), {
+  ssr: false,
+});
 
 export default function DetalleDestino() {
   const router = useRouter();
   const { nombre } = router.query;
   const [destino, setDestino] = useState(null);
   const [imagenActiva, setImagenActiva] = useState(0);
+  const [LClient, setLClient] = useState(null); // ✅ Leaflet dinámico
+
+  // ✅ Importar Leaflet solo en cliente
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      import("leaflet").then((leaflet) => setLClient(leaflet));
+    }
+  }, []);
 
   useEffect(() => {
     if (!router.isReady || !nombre) return;
 
     const nombreLimpio = decodeURIComponent(nombre).replace(/_/g, " ");
     const todos = [...gastronomia, ...floraFauna, ...cultura];
-    const encontrado = todos.find((d) => d.nombre.toLowerCase() === nombreLimpio.toLowerCase());
+    const encontrado = todos.find(
+      (d) => d.nombre.toLowerCase() === nombreLimpio.toLowerCase()
+    );
 
     if (encontrado) {
       setDestino(encontrado);
@@ -52,26 +72,38 @@ export default function DetalleDestino() {
     );
   }
 
-  const imagenesGaleria = [
-    destino.imagen,
-    "/imagenes/naturaleza1.jpg",
-    "/imagenes/naturaleza2.jpg",
-    "/imagenes/pueblo1.jpg",
-    "/imagenes/comida1.jpg",
-  ];
+  // Galería: repetir la misma imagen del destino varias veces
+  const imagenesGaleria = Array(5).fill(destino.imagen);
 
   const siguiente = () => {
     setImagenActiva((prev) => (prev + 1) % imagenesGaleria.length);
   };
 
   const anterior = () => {
-    setImagenActiva((prev) => (prev - 1 + imagenesGaleria.length) % imagenesGaleria.length);
+    setImagenActiva(
+      (prev) => (prev - 1 + imagenesGaleria.length) % imagenesGaleria.length
+    );
   };
 
   const colors = {
     primary: "#2E8B57",
     secondary: "#3BA6E8",
   };
+
+  // ✅ Crear icono circular con imagen solo si Leaflet está disponible
+  const iconoPersonalizado =
+    LClient &&
+    LClient.divIcon({
+      className: "custom-marker",
+      html: `
+        <div class="marker-circle">
+          <img src="${destino.imagen}" alt="${destino.nombre}" />
+        </div>
+      `,
+      iconSize: [50, 50],
+      iconAnchor: [25, 25],
+      popupAnchor: [0, -25],
+    });
 
   return (
     <div className="min-h-screen bg-white text-gray-800">
@@ -124,7 +156,11 @@ export default function DetalleDestino() {
                   imagenActiva === i ? "border-green-600" : "border-transparent"
                 }`}
               >
-                <img src={img} alt={`miniatura-${i}`} className="w-full h-full object-cover" />
+                <img
+                  src={img}
+                  alt={`miniatura-${i}`}
+                  className="w-full h-full object-cover"
+                />
               </motion.div>
             ))}
           </div>
@@ -132,7 +168,9 @@ export default function DetalleDestino() {
 
         {/* Información del destino */}
         <section className="mt-8">
-          <h1 className="text-3xl font-bold text-green-800 mb-2">{destino.nombre}</h1>
+          <h1 className="text-3xl font-bold text-green-800 mb-2">
+            {destino.nombre}
+          </h1>
           <div className="flex items-center gap-2 mb-3 text-gray-600">
             <MapPin size={18} className="text-green-600" />
             <span>{destino.tipo || "Destino turístico"}</span>
@@ -142,10 +180,16 @@ export default function DetalleDestino() {
               <Star
                 key={i}
                 size={18}
-                className={i < Math.round(destino.rating || 4) ? "text-yellow-400" : "text-gray-300"}
+                className={
+                  i < Math.round(destino.rating || 4)
+                    ? "text-yellow-400"
+                    : "text-gray-300"
+                }
               />
             ))}
-            <span className="ml-2 text-gray-500 text-sm">({destino.rating || "4.5"})</span>
+            <span className="ml-2 text-gray-500 text-sm">
+              ({destino.rating || "4.5"})
+            </span>
           </div>
           <p className="text-gray-700 leading-relaxed">{destino.descripcion}</p>
         </section>
@@ -153,20 +197,32 @@ export default function DetalleDestino() {
         {/* Mapa */}
         {destino.latitud && destino.longitud && (
           <section className="mt-10">
-            <h2 className="text-2xl font-semibold text-green-700 mb-3">Ubicación en el mapa</h2>
+            <h2 className="text-2xl font-semibold text-green-700 mb-3">
+              Ubicación en el mapa
+            </h2>
             <div className="w-full h-[350px] rounded-xl overflow-hidden shadow-lg border border-gray-200">
-              <MapContainer center={[destino.latitud, destino.longitud]} zoom={12} className="w-full h-full">
+              <MapContainer
+                center={[destino.latitud, destino.longitud]}
+                zoom={12}
+                className="w-full h-full"
+              >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
                 />
-                <Marker position={[destino.latitud, destino.longitud]}>
-                  <Popup>
-                    <strong>{destino.nombre}</strong>
-                    <br />
-                    {destino.tipo}
-                  </Popup>
-                </Marker>
+                {/* ✅ Marcador circular solo si Leaflet está listo */}
+                {iconoPersonalizado && (
+                  <Marker
+                    position={[destino.latitud, destino.longitud]}
+                    icon={iconoPersonalizado}
+                  >
+                    <Popup>
+                      <strong>{destino.nombre}</strong>
+                      <br />
+                      {destino.tipo}
+                    </Popup>
+                  </Marker>
+                )}
               </MapContainer>
             </div>
           </section>
@@ -179,14 +235,19 @@ export default function DetalleDestino() {
             background: `linear-gradient(to right, ${colors.primary}, ${colors.secondary})`,
           }}
         >
-          <h2 className="text-2xl font-semibold text-white mb-3">Experiencia en Realidad Aumentada</h2>
+          <h2 className="text-2xl font-semibold text-white mb-3">
+            Experiencia en Realidad Aumentada
+          </h2>
           <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-            Explora este destino de manera inmersiva mediante modelos 3D interactivos.
+            Explora este destino de manera inmersiva mediante modelos 3D
+            interactivos.
           </p>
           <motion.button
             whileTap={{ scale: 0.97 }}
             className="px-8 py-3 bg-white text-green-700 font-semibold rounded-full hover:bg-gray-100 transition-all shadow-md"
-            onClick={() => alert("Aquí se abriría la experiencia de Realidad Aumentada")}
+            onClick={() =>
+              alert("Aquí se abriría la experiencia de Realidad Aumentada")
+            }
           >
             Explorar en RA
           </motion.button>
