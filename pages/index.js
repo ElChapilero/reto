@@ -153,34 +153,34 @@ export default function Home() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
           {[
             {
-              title: "Laguna de la Cocha",
-              desc: "Un espejo natural rodeado de montañas y neblina. Ideal para paseos en lancha y ecoturismo.",
-              img: "/cocha.jpg",
+              title: "Laguna de Tajumbina",
+              desc: "Un hermoso espejo de agua rodeado de páramos en el municipio de Cumbal. Ideal para caminatas ecológicas y observación de aves.",
+              img: "/tajumbina.jpg",
             },
             {
-              title: "Santuario de Las Lajas",
-              desc: "Maravilla arquitectónica incrustada entre cañones, una joya del turismo religioso.",
-              img: "/lajas.jpg",
+              title: "Desierto de Sapia",
+              desc: "Paisaje semidesértico en el municipio de Yacuanquer, con formaciones rocosas y colores rojizos únicos en el sur de Colombia.",
+              img: "/sapia.jpg",
             },
             {
-              title: "Volcán Galeras",
-              desc: "Ofrece vistas espectaculares de Pasto y sus alrededores. Perfecto para fotografía y senderismo.",
-              img: "/galeras.jpg",
+              title: "Reserva Natural La Planada",
+              desc: "Ubicada cerca de Ricaurte, esta reserva alberga una biodiversidad impresionante y senderos entre bosques nublados.",
+              img: "/planada.jpg",
             },
             {
-              title: "Carnaval de Negros y Blancos",
-              desc: "Patrimonio de la humanidad lleno de color, música y cultura.",
-              img: "/carnaval.jpg",
+              title: "Laguna Verde (Volcán Azufral)",
+              desc: "Crater volcánico con una laguna color esmeralda, rodeada de niebla y montañas. Ideal para senderismo y fotografía.",
+              img: "/lagunaverde.jpg",
             },
             {
-              title: "Ipiales y frontera",
-              desc: "Ciudad vibrante, con comercio y paisajes únicos del sur del país.",
-              img: "/ipiales.jpg",
+              title: "Barbacoas y el río Telembí",
+              desc: "Zona selvática al occidente de Nariño, con ríos navegables, cultura afrodescendiente y tradiciones pesqueras.",
+              img: "/barbacoas.jpg",
             },
             {
-              title: "Tuquerres y el Altiplano",
-              desc: "Paisajes rurales, tradición agrícola y miradores espectaculares.",
-              img: "/tuquerres.jpg",
+              title: "La Tola y sus playas",
+              desc: "En la costa pacífica nariñense, ofrece playas tranquilas, manglares y gastronomía de mariscos típica del Pacífico.",
+              img: "/latola.jpg",
             },
           ].map((item, i) => (
             <motion.div

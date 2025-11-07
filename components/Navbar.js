@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Menu, X, Search, LogOut } from 'lucide-react'
+import { Menu, X, Search, LogOut, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -11,6 +11,7 @@ export default function Navbar() {
   const [lastScrollY, setLastScrollY] = useState(0)
   const [visible, setVisible] = useState(true)
   const [user, setUser] = useState(null)
+  const [language, setLanguage] = useState('es')
 
   const colors = {
     primary: '#2E8B57',
@@ -25,7 +26,6 @@ export default function Navbar() {
     }
     getSession()
 
-    // Escuchar cambios de sesión en tiempo real
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null)
     })
@@ -47,6 +47,19 @@ export default function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [lastScrollY])
 
+  // Idioma persistente
+  useEffect(() => {
+    const savedLang = localStorage.getItem('selectedLang')
+    if (savedLang) setLanguage(savedLang)
+  }, [])
+
+  const handleLanguageChange = (e) => {
+    const selected = e.target.value
+    setLanguage(selected)
+    localStorage.setItem('selectedLang', selected)
+    console.log(`🌍 Idioma cambiado a: ${selected}`)
+  }
+
   const navLinks = [
     { name: 'Inicio', href: '/' },
     { name: 'Destinos', href: '/destinos' },
@@ -54,7 +67,6 @@ export default function Navbar() {
     { name: 'Contacto', href: '/contacto' },
   ]
 
-  // Cerrar sesión
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -72,7 +84,7 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* === LOGO === */}
+          {/* LOGO */}
           <Link href="/" className="flex items-center space-x-2">
             <img
               src="/Logo_1.svg"
@@ -84,7 +96,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* === NAV DESKTOP === */}
+          {/* DESKTOP NAV */}
           <div className="hidden md:flex items-center space-x-7">
             {navLinks.map((link) => (
               <Link
@@ -104,6 +116,25 @@ export default function Navbar() {
                 className="border border-white/40 rounded-full pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-yellow-200 text-gray-900 placeholder-gray-400 bg-white/90"
               />
               <Search className="absolute left-3 top-2.5 text-gray-500" size={16} />
+            </div>
+
+            {/* LANGUAGE SELECTOR */}
+            <div className="ml-4 flex items-center space-x-2">
+              <Globe size={18} className="text-white" />
+              <select
+                value={language}
+                onChange={handleLanguageChange}
+                className="bg-white/90 text-gray-800 text-sm rounded-full px-3 py-1.5 border border-white/50 shadow-sm focus:outline-none focus:ring-1 focus:ring-yellow-300"
+              >
+                <option value="es">🇪🇸 Español</option>
+                <option value="en">🇺🇸 English</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="zh">🇨🇳 中文</option>
+                <option value="ja">🇯🇵 日本語</option>
+              </select>
             </div>
 
             {/* AUTH BUTTONS */}
@@ -139,7 +170,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* === MOBILE MENU BUTTON === */}
+          {/* MOBILE MENU BUTTON */}
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
@@ -151,7 +182,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* === MOBILE MENU === */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -181,6 +212,25 @@ export default function Navbar() {
                   className="w-full border border-white/40 rounded-full pl-10 pr-4 py-2 text-sm text-gray-900 bg-white/95 focus:outline-none focus:ring-1 focus:ring-yellow-300"
                 />
                 <Search className="absolute left-3 top-2.5 text-gray-500" size={16} />
+              </div>
+
+              {/* LANGUAGE SELECTOR MOBILE */}
+              <div className="flex items-center gap-2 mt-3">
+                <Globe size={18} className="text-white" />
+                <select
+                  value={language}
+                  onChange={handleLanguageChange}
+                  className="flex-1 bg-white/95 text-gray-800 text-sm rounded-full px-3 py-2 border border-white/50 focus:outline-none focus:ring-1 focus:ring-yellow-300"
+                >
+                  <option value="es">Español</option>
+                  <option value="en">English</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="it">Italiano</option>
+                  <option value="pt">Português</option>
+                  <option value="zh">中文</option>
+                  <option value="ja">日本語</option>
+                </select>
               </div>
 
               {/* AUTH BUTTONS */}
